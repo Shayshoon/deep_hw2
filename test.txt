@@ -1,0 +1,7 @@
+# conda environments:
+#
+base                     /home/shay-lavi/miniconda3
+anaconda                 /home/shay-lavi/miniconda3/envs/anaconda
+cs236781-hw2          *  /home/shay-lavi/miniconda3/envs/cs236781-hw2
+qwen-314-env             /home/shay-lavi/miniconda3/envs/qwen-314-env
+
