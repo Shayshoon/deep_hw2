@@ -259,13 +259,29 @@ def part4_optim_hp():
 part4_q1 = r"""
 **Your answer:**
 
+1. **Number of Parameters:**
+    $C=256$ the number of input and output channels.
+   - **Regular Block:** Consists of two $3 \times 3$ convolutions with $C$ filters each.<br>
+   Total parameters: $2 \times (3 \times 3 \times C \times C) = 2 \times (9 \times 256^2) = 1,179,648$.
+   - **Bottleneck Block:** 
+     - Layer 1 ($1 \times 1$): $1 \times 1 \times 256 \times 64 = 16,384$
+     - Layer 2 ($3 \times 3$): $3 \times 3 \times 64 \times 64 = 36,864$
+     - Layer 3 ($1 \times 1$): $1 \times 1 \times 64 \times 256 = 16,384$<br>
+     Total parameters: $16,384 + 36,864 + 16,384 = 69,632$.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. **Floating Point Operations:**
+   The number of FLOPs in a convolutional layer is calculated as:  
+   $\text{FLOPs} \approx \text{Parameters} \times (\text{Output Height} \times \text{Output Width})$.  
+   
+   both the regular block and the bottleneck block are designed to preserve the spatial dimensions of the input (using padding where necessary). Since both blocks operate on the same feature map resolution ($H \times W$), the difference in computational cost depends solely on the number of parameters in each block.  
+ 
+    $$\frac{\text{Parameters}_{\text{Regular}}}{\text{Parameters}_{\text{Bottleneck}}} = \frac{1,179,648}{69,632} \approx 16.94$$
+
+   This means the bottleneck block is approximately 17 times more efficient in terms of FLOPs than the regular block for the same number of input/output channels
+
+3. **Ability to Integrate Input:**
+   - **Spatially:** The regular block uses two $3 \times 3$ layers, resulting in a $5 \times 5$ receptive field. The bottleneck block uses only one $3 \times 3$ layer, resulting in a smaller $3 \times 3$ receptive field. Thus, the regular block has a better capacity for spatial integration.
+   - **Across Feature Maps:** The bottleneck block utilizes two $1 \times 1$ convolutions specifically designed for channel mixing. This allows for more complex inter-channel combinations and non-linearities (as each conv is followed by an activation) despite the lower parameter count.
 
 """
 
@@ -273,13 +289,14 @@ An equation: $e^{i\pi} -1 = 0$
 part4_q2 = r"""
 **Your answer:**
 
+1. For $y_1 = \mat{M} \vec{x}_1$, the gradient with respect to the input is:
+   $$\frac{\partial L}{\partial \vec{x}_1} = \frac{\partial L}{\partial \vec{y}_1} \cdot \frac{\partial \vec{y}_1}{\partial \vec{x}_1} = \frac{\partial L}{\partial \vec{y}_1} \mat{M}$$
+   In a very deep network, the gradient is multiplied by $\mat{M}$ at each layer. If the singular values of $\mat{M}$ are small, the gradient will decay exponentially (Vanishing Gradient).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+2. For $\vec{y}_2 = \vec{x}_2 + \mat{M} \vec{x}_2 = (\mat{I} + \mat{M}) \vec{x}_2$, the gradient is:
+   $$\frac{\partial L}{\partial \vec{x}_2} = \frac{\partial L}{\partial \vec{y}_2} \cdot \frac{\partial \vec{y}_2}{\partial \vec{x}_2} = \frac{\partial L}{\partial \vec{y}_2} (\mat{I} + \mat{M})$$
+
+3. The presence of the Identity matrix $\mat{I}$ in the residual gradient $(\mat{I} + \mat{M})$ ensures that the gradient can flow directly through the skip connection even if the learned weights $\mat{M}$ are very small or cause the gradient to vanish. This creates a "highway" for the gradient, allowing it to reach earlier layers in the network without being significantly diminished, which facilitates the training of extremely deep architectures.
 
 """
 
