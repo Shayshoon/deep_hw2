@@ -368,13 +368,23 @@ An equation: $e^{i\pi} -1 = 0$
 part6_q1 = r"""
 **Your answer:**
 
+Analyze the inference results of the 2 images. 
+1. How well did the model detect the objects in the pictures? with what confidance?
+2. What can possibly be the reason for the model failures? suggest methods to resolve that issue.
+3. recall that we learned how to fool a model by adverserial attack (PGD), describe how you would attack an Object Detection model (such as YOLO).
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1. The model didn't detect the objects well at all.
+In the first image only people and a surfboard were detected. even though there are none. the people were detected with relatively high confidence while the surfboard was detected with low confidence.
+In the second image the model wrongly detected two cats, one of them with low confidence. The cats are actually dogs sitting near a cat. The model also detected a dog with ~50% confidence, the boundary box detected is not accurate as the dog is not present in a large portion of it.
+
+2. For the first picture, the model failed to detect dolphins because it can't detect dolphins at all. we can see by that in `model.names` there is no dolphin class. Furthermore, it seems that the poor lighting made the model detect silhouettes of people (with high confidence) even though there are none.
+To fix this problem, we could add a detection class for dolphins and train the model on more pictures of dolphins. We could also augment the dataset with different techniques like color jittering which could help the model be robust to poor lighting conditions so it would be better at detecting silhouettes.
+
+The second picture is quite cluttered which could be a reason the model failed to successfuly detect the dogs and cat. Each subject interfered with the detection of the rest. Also, the classes for cats and dogs share similar features (fur, eyes, ears...) which could have interfered with detection even more.
+To fix these problems, we could first adjust the IoU threshold, it seems to be too high since every detected box is larger than the actual subject.
+Also during training we could employ the CutMix regularization method. This will help with detecting different classed subjects which are very close together.
+
+3. There are a few ways to attack an object detection model such as YOLO. We could make it misclassify objects, make the boundary boxes meaningless by shifting and distorting them, or make objects disappear completely. Such attacks would be achievable by calculating the loss function and gradients of the model on certain input images. Then we would pertrube the input images in the direction of the gradient (gradient ascent). This way we would maximize loss on those inputs. The pertrubed images would look identical to the original ones to the naked eye, but the model wouldn't detect the key properties it needs to classify and detect objects successfuly.
 
 """
 
@@ -396,13 +406,21 @@ An equation: $e^{i\pi} -1 = 0$
 part6_q3 = r"""
 **Your answer:**
 
+Object detection pitfalls could be, for example: **occlusion** - when the objects are partially occlude, and thus missing important features, **model bias** - when a model learn some bias about an object, it could recognize it as something else in a different setup, and many others like **Deformation**, **Illumination conditions**, **Cluttered** or **textured background and blurring** due to moving objects.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+How well did the model detect the objects in the pictures? explain.
+
+**# First image: Sphynx cat **
+
+The model misclassified the cat as a person with low confidence (40%). This demonstrates model bias. The training set likely didn't feature alot of sphynx cats or other animals without fur. This likely resulted in a strong association between fur and animals. Moreover, people are usually featured with no fur (not as much as the average cat or dog at least). The model detected a face with no fur, the most probable association to this setup is a person.
+
+**# Second image: Cat in the night **
+
+In this image was detected a cat that takes almost up the entire frame. This could be due to poor lighting conditions and subject blurring due to motion. The cat isn't illuminated properly and is very blurry since it's in motion. The edges aren't very clear which might have made choosing a smaller anchor difficult or impossible, resulting in a large anchor box choice and poor boundary box decision.
+
+**# Third image: Group selfie **
+
+In the image, there are multiple people in the same areas and in awkward poses. This demonstrates occlusion and deformation, the model failed to separate the individuals because their features bled together due to proximity. The unusual camera angle defromed the subjects. It defaulted to wrapping the "crowd" in a single box. One persons face is only partly in the frame. since the "person" score was high for both people on the left side, and they are close together, the model chose a single anchor box for both of them. The person on the right is blurry and holding a cellphone next to her face which made the obstructed the face shape and made detection difficult.
 
 """
 

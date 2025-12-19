@@ -218,46 +218,48 @@ class ResidualBlock(nn.Module):
         #  - Don't create layers which you don't use! This will prevent
         #    correct comparison in the test.
         # ====== YOUR CODE: ======
+
+        # Main path:
         main_layers = []
-        conv = nn.Conv2d(in_channels, channels[-1], 1)
-        dropout = None
-        batchnorm = None
-        relu = None
-
-
-        activation = ACTIVATIONS[activation_type](**self.activation_params)
+        activation = ACTIVATIONS[activation_type]
         prev_channels = in_channels
-        n_over_p = len(self.channels) // self.pool_every
-
-        extra_convs = int(len(self.channels) % self.pool_every != 0)
-        for curr_pool in range(n_over_p + extra_convs):
-            
-            # add a sequence of conv layers before a pooling
-            for ker_size, curr_channels in zip(kernel_sizes, channels):
-                conv = nn.Conv2d(prev_channels, curr_channels, ker_size)
-                layers.append(conv)
-                layers.append(activation)
-                
-                prev_channels = curr_channels
-
-            if (curr_pool != n_over_p):
-                # add a pooling layer
-                pool = pooling(**self.pooling_params)
-                layers.append(pool)
-
-        seq = nn.Sequential(*layers)
-
-
-        shortcut_layers = []
-        shortcut_conv = nn.Conv2d(in_channels, channels[-1], 1)
+        iterations = 0
         
+        for ker_size, curr_channels in zip(kernel_sizes, channels):
+            iterations += 1
+            padding = (ker_size - 1) // 2
+            
+            conv = nn.Conv2d(prev_channels, curr_channels, ker_size, padding=padding)
+            main_layers.append(conv)
+            if iterations != len(channels):
+                if dropout > 0:
+                    main_layers.append(nn.Dropout2d(dropout))
+                
+                if batchnorm:
+                    main_layers.append(nn.BatchNorm2d(curr_channels))
+                    
+                main_layers.append(activation(**activation_params))
+                
+            prev_channels = curr_channels
+
+        self.main_path = nn.Sequential(*main_layers)
+
+        # Residual path:
+        shortcut_layer = nn.Identity()
+        if in_channels != channels[-1]:
+            shortcut_layer = nn.Conv2d(in_channels, channels[-1], 1, bias=False)
+        self.shortcut_path = nn.Sequential(shortcut_layer)
+
         # ========================
 
     def forward(self, x: Tensor):
         # TODO: Implement the forward pass. Save the main and residual path to `out`.
         out: Tensor = None
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        main_out = self.main_path(x)
+        shortcut_out = self.shortcut_path(x)
+        
+        out = main_out + shortcut_out
         # ========================
         out = torch.relu(out)
         return out
@@ -297,7 +299,14 @@ class ResidualBottleneckBlock(ResidualBlock):
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        super().__init__(
+            in_out_channels,
+            [inner_channels[0]] + inner_channels + [in_out_channels],
+            [1] + inner_kernel_sizes + [1],
+            **kwargs
+        )
+        
         # ========================
 
 
@@ -343,7 +352,45 @@ class ResNet(CNN):
         #  - Use bottleneck blocks if requested and if the number of input and output
         #    channels match for each group of P convolutions.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+
+        PoolingClass = POOLINGS[self.pooling_type]
+
+        for i in range(0, len(self.channels), self.pool_every):
+            
+            block_channels = self.channels[i : i + self.pool_every]
+            block_kernels = [3] * len(block_channels)
+            
+            out_channels = block_channels[-1]
+            
+            if self.bottleneck and (in_channels == out_channels):
+                layers.append(ResidualBottleneckBlock(
+                    in_out_channels=in_channels,
+                    inner_channels=block_channels[1:-1],
+                    inner_kernel_sizes=block_kernels[1:-1],
+                    batchnorm=self.batchnorm,
+                    dropout=self.dropout,
+                    activation_type=self.activation_type,
+                    activation_params=self.activation_params,
+                ))
+            else:
+                layers.append(ResidualBlock(
+                    in_channels=in_channels,
+                    channels=block_channels,
+                    kernel_sizes=block_kernels,
+                    batchnorm=self.batchnorm,
+                    dropout=self.dropout,
+                    activation_type=self.activation_type,
+                    activation_params=self.activation_params,
+                ))
+
+            in_channels = out_channels
+
+            if len(block_channels) == self.pool_every:
+                layers.append(PoolingClass(**self.pooling_params))
+
+
+
+        
         # ========================
         seq = nn.Sequential(*layers)
         return seq

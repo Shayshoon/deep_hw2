@@ -152,7 +152,43 @@ def cnn_experiment(
     #   for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
+    dl_test = DataLoader(ds_test, batch_size=bs_test, shuffle=True)
+
+    in_size = tuple(reversed(dl_train.dataset.data.shape[1:]))
+    out_classes = 10 # CIFAR10
+    channels = [item for item in filters_per_layer for _ in range(layers_per_block)]
+    activation_type = "relu"
+    pooling_type = "max"
+    pooling_params = {'kernel_size': 2}
+    conv_params = {'kernel_size': 3}
+
+    cnn = model_cls(in_size,
+              out_classes,
+              channels,
+              pool_every,
+              hidden_dims,
+              activation_type=activation_type,
+              pooling_type=pooling_type,
+              pooling_params=pooling_params,
+              conv_params=conv_params)
+    model = ArgMaxClassifier(cnn)
+    model = model.to(device)
+
+    loss_fn = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=reg, momentum=0.9)
+    trainer = ClassifierTrainer(model, loss_fn, optimizer, device=device)
+
+    fit_res = trainer.fit(
+        dl_train, 
+        dl_test, 
+        num_epochs=epochs,
+        early_stopping=early_stopping,
+        checkpoints=checkpoints,
+        print_every=100, 
+        max_batches=batches,
+        verbose=False
+    )
     # ========================
 
     save_experiment(run_name, out_dir, cfg, fit_res)
