@@ -114,7 +114,7 @@ The results match theoretical expectations. The graphs demonstrate that without 
 Comparing these two settings illustrates the balance between regularization and model capacity.
 
 * **Optimal Regularization ($p=0.4$):** This setting provides enough regularization to prevent overfitting without hindering the learning process. It achieves the best balance, resulting in the highest test accuracy.
-* **Underfitting ($p=0.8$):** The high-dropout configuration leads to דunderfitting. Because 80% of the neurons are deactivated during each pass, the network lacks the capacity to learn the training data, resulting in a very high `train_loss` and a `train_acc` that plateaus at a very low level (around 30%).
+* **Underfitting ($p=0.8$):** The high-dropout configuration leads to underfitting. Because 80% of the neurons are deactivated during each pass, the network lacks the capacity to learn the training data, resulting in a very high `train_loss` and a `train_acc` that plateaus at a very low level (around 30%).
 """
 
 part2_q2 = r"""
