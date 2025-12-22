@@ -105,22 +105,17 @@ def part2_dropout_hp():
 part2_q1 = r"""
 **Your answer:**
 
-### Question 1 
+#### 1. 
+The results match theoretical expectations. The graphs demonstrate that without dropout, the model suffers from overfitting, whereas a moderate dropout rate improves generalization.
 
-Regarding the graphs you got for the three dropout configurations:
+* **Overfitting Evidence:** The configuration with $dropout=0$ shows the fastest decrease in `train_loss` and reaches the highest `train_acc`. However, its `test_loss` begins to increase significantly after iteration 15, indicating that the model is memorizing noise rather than learning general patterns.
+* **Dropout Benefit:** With $dropout=0.4$, the `test_loss` remains stable and lower than the no-dropout case. Eventually, the `test_acc` for $0.4$ surpasses the $0$ dropout model, proving better performance on unseen data.
 
-1. Explain the graphs of no-dropout vs dropout. Do they match what you expected to see?
-    - If yes, explain why and provide examples based on the graphs.
-    - If no, explain what you think the problem is and what should be modified to fix it.
+#### 2.
+Comparing these two settings illustrates the balance between regularization and model capacity.
 
-2. Compare the low-dropout setting to the high-dropout setting and explain based on your graphs.
-
-1. The graphs match our expectations. Dropout is a method intended to improve the generalization of our model. With dropout=0, we can see the model is severely overfit (train_acc=0.7, test_acc=0.5). We can observe that setting dropout=0.4 has fixed the problem (train_acc=0.5=test_acc) the model performs worse on the training set but the overfitting problem has been mostly solved. of course setting the dropout=0.8 is too high and the model has a hard time learning when most of its weights are being erased while training. 
-
-while training with dropout=0.4, the model doesn't retain subtle training set data. weights that have "lived" for a long time and had a chance to "memorize" the train set also have a high probability to be dropped, this could explain the observed behaviour.
-
-2. the high dropout graph features a very low accuracy and a very high loss curve. this is because the model keeps "forgetting" most of its weights, it can't perform well on the train set or on the test set. The low dropout setting features graphs of a very obviously overfitted model, this is because the model has perfect "memory" and it has learned the train set. the mid dropout=0.4 is a perfect compromise, the model cant memorize the train set but can learn its underlying distribution well.
-
+* **Optimal Regularization ($p=0.4$):** This setting provides enough regularization to prevent overfitting without hindering the learning process. It achieves the best balance, resulting in the highest test accuracy.
+* **Underfitting ($p=0.8$):** The high-dropout configuration leads to דunderfitting. Because 80% of the neurons are deactivated during each pass, the network lacks the capacity to learn the training data, resulting in a very high `train_loss` and a `train_acc` that plateaus at a very low level (around 30%).
 """
 
 part2_q2 = r"""
@@ -225,12 +220,25 @@ part3_q3 = r"""
 **Your answer:**
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+#### 1. 
+Increasing the number of neurons per layer (width) enhances the model's capacity to represent more complex, non-linear functions within a single transformation level.
+At `width=2`, the boundaries are relatively simple and somewhat linear. As width increases to `32`, the boundary becomes significantly more intricate and "wraps" more tightly around the clusters, especially visible in the `depth=1` column where the transition goes from a nearly straight diagonal to a curved "S" shape. increasing width improves accuracy up to a certain point. For example, at `depth=1`, `test_acc` improves from $83.2\%$ at `width=2` to $90.0\%$ at `width=32`.
+
+#### 2. 
+Increasing the number of layers (depth) allows the model to learn a hierarchy of features, creating more flexible decision boundaries through composition.
+For a fixed `width=2`, increasing depth from $1$ to $4$ allows the model to create a much more curved boundary that better separates the interlocking "moons".
+Depth is particularly effective when width is small. At `width=2`, increasing depth from $1$ to $4$ boosts `test_acc` from $83.2\%$ to $90.5\%$. However, with large widths, adding depth provides diminishing returns as the model already has high capacity.
+
+#### 3.
+These two configurations represent the trade-off between "shallow and wide" vs. "deep and narrow" architectures.
+* **`depth=1, width=32`:** This model has $90.0\%$ test accuracy. Its boundary is smooth but highly flexible in a single dimension of transformation.
+* **`depth=4, width=8`:** This model has $89.7\%$ test accuracy. The boundary is very similar in shape to the wide-shallow model, showing that for this specific dataset, both architectures reach similar representative power.
+* **Conclusion:** Deep-narrow architectures are often more parameter-efficient for complex data, but for this 2D binary classification, both configurations are sufficient to solve the problem.
+
+#### 4.
+The `thresh` value shown in each plot (ranging from $0.07$ to $0.37$) was selected to maximize performance on the validation set.
+It improved the test results by accounting for potential class imbalances or specific biases in the model's output probabilities. 
+For instance, in the `depth=4, width=8` case, a low threshold of $0.07$ was needed to achieve the $89.7\%$ accuracy.
 
 """
 
