@@ -238,6 +238,7 @@ These two configurations represent the trade-off between "shallow and wide" vs. 
 The `thresh` value shown in each plot (ranging from $0.07$ to $0.37$) was selected to maximize performance on the validation set.
 It improved the test results by accounting for potential class imbalances or specific biases in the model's output probabilities. 
 For instance, in the `depth=4, width=8` case, a low threshold of $0.07$ was needed to achieve the $89.7\%$ accuracy.
+Instead of assuming a default $0.5$ threshold, optimizing it on validation data ensures the decision boundary is positioned at the point that best separates the classes for that specific architecture's learned distribution. For instance, in the `depth=4, width=8` case, a low threshold of $0.07$ was needed to achieve the $89.7\%$ accuracy.
 
 """
 
