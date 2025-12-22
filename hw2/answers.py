@@ -109,8 +109,7 @@ part2_q1 = r"""
 The results match theoretical expectations. The graphs demonstrate that without dropout, the model suffers from overfitting, whereas a moderate dropout rate improves generalization.
 
 * **Overfitting Evidence:** The configuration with $dropout=0$ shows the fastest decrease in `train_loss` and reaches the highest `train_acc`. However, its `test_loss` begins to increase significantly after iteration 15, indicating that the model is memorizing noise rather than learning general patterns.
-* **Dropout Benefit:** With $dropout=0.4$, the `test_loss` remains stable and lower than the no-dropout case. Eventually, the `test_acc` for $0.4$ surpasses the $0$ dropout model, proving better performance on unseen data.
-
+* **Dropout Benefit:** Without dropout, neurons often develop complex dependencies on one another to "fix" mistakes in the training data, leading to a model that is too specific to the training set. By randomly deactivating $40\%$ of neurons in each pass, dropout forces every neuron to learn robust and useful features independently. With $dropout=0.4$, the `test_loss` remains stable and lower than the no-dropout case. Eventually, the `test_acc` for $0.4$ surpasses the $0$ dropout model, proving better performance on unseen data.
 #### 2.
 Comparing these two settings illustrates the balance between regularization and model capacity.
 
