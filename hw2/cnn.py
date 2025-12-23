@@ -395,3 +395,43 @@ class ResNet(CNN):
         seq = nn.Sequential(*layers)
         return seq
 
+class YourCNN(nn.Module):
+    def __init__(self, in_size, out_classes, channels, pool_every, hidden_dims, dropout_rate=0.4, use_batchnorm=True):
+        super().__init__()
+        in_channels ,h ,w = in_size
+        conv_layers = []
+        curr_channels = in_channels
+
+        for i, out_channels in enumerate(channels):
+            conv_layers.append(nn.Conv2d(curr_channels, out_channels, kernel_size=3, padding=1))
+            if use_batchnorm:
+                conv_layers.append(nn.BatchNorm2d(out_channels))
+            conv_layers.append(nn.ReLU())
+            if(i+1) % pool_every == 0:
+                conv_layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+                h //= 2
+                w //= 2
+            curr_channels = out_channels
+        self.features = nn.Sequential(*conv_layers)
+
+        flattened_size = curr_channels * h * w
+        fc_layers = []
+        curr_dim = flattened_size
+
+        for h_dim in hidden_dims:
+            fc_layers.append(nn.Linear(curr_dim, h_dim))
+            fc_layers.append(nn.Dropout(dropout_rate))
+            fc_layers.append(nn.ReLU())
+            curr_dim = h_dim
+
+        fc_layers.append(nn.Linear(curr_dim, out_classes))
+        self.classifier = nn.Sequential(*fc_layers)
+
+        
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+
+        return x
+        
