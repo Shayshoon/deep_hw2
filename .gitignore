@@ -63,7 +63,7 @@ coverage.xml
 *.cover
 *.py,cover
 slurm*.out
-old-slurm/
+old_slurm/
 # --- Data (Optional but recommended) ---
 # Prevent accidental upload of large datasets or models
 *.csv
