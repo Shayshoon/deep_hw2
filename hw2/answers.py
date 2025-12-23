@@ -338,18 +338,21 @@ part5_q2 = r"""
 **Your answer:**
 
 #### 1.
-For all depths that were successfully trained ($L=2, 4, 8$), we see a consistent trend: increasing $K$ leads to higher accuracy and lower training loss.
+For the shallow architectures ($L=2$ and $L=4$), increasing the width $K$ from $32$ to $256$ led to a significant improvement in both training and test accuracy because In these manageable depths, the gradient flow is healthy. Therefore, adding more filters ($K$) directly increases the Representational Capacity. The network can detect more diverse features in parallel, leading to a more robust classification..
+For the deeper architectures, $L=8$, increasing the width $K$ did not improve the results. As seen in the graphs, even with $K=256$, the accuracy for $L=8$ remained stagnant around $10\%-13.5\%$
 The configurations with $K=256$ achieved the highest test accuracy across the board because Increasing the number of filters ($K$) increases the Representational Capacity of each layer. More filters allow the network to detect a wider variety of features simultaneously at each level of abstraction. For example, instead of just detecting 32 different types of edges or textures, a $K=256$ layer can detect 256 distinct patterns, providing the subsequent layers with a much richer description of the input image.
 
 
 
 #### 2. Experiment 1.2 vs. Experiment 1.1 :
-Training Stability: Width ($K$) is "safer" In Exp 1.2, increasing $K$ never caused the model to stop learning. Even at $K=256$, the model converged well but Depth ($L$) is "risky" In Exp 1.1, increasing depth beyond a certain point ($L=16$) led to a total failure (vanishing gradients).
-Efficiency vs. Performance: While adding depth is theoretically more efficient at learning complex hierarchical features, it makes the optimization landscape much more difficult to navigate. 
-Adding width is a more straightforward way to boost performance, but it comes with a significant increase in the number of parameters and computational cost
+Both experiments show that depth is the "bottleneck" of this specific architecture. In Exp 1.1, we saw that $L=16$ failed with $K=32, 64$. In Exp 1.2, we see that even pushing $K$ to $256$ cannot rescue these deep models.
+Efficiency vs. Risk: * Increasing Width ($K$): A safe way to boost performance, but only if the network is already training. It increases the number of parameters quadratically, which is computationally expensive but stable.
+    * Increasing Depth ($L$): A risky way to boost performance. While it allows for more complex hierarchical learning, it quickly hits the "Vanishing Gradient" wall unless advanced techniques (like Skip-Connections) are used.
 
 #### 3. Interaction between $L$ and $K$ :
-For $L=16$, increasing the width to $K=256$ did not solve the non-learning problem. This confirms that the failure in $L=16$ is an optimization/gradient flow issue rather than a lack of parameters or capacity. No matter how "wide" the layers are, if the signal cannot reach them during backpropagation, the network cannot learn.
+* The Failure of $L=8$ and $L=16$: In this experiment, we observe that for the deeper configurations, specifically $L=8$ and $L=16$, increasing the width to $K=256$ did not solve the non-learning problem. 
+* Gradient Flow vs. Capacity: As seen in the results, even with a very large number of parameters, the accuracy for $L=8$ remained stagnant around $10\%-13.5\%$. This confirms that the failure in these depths is an optimization/gradient flow issue rather than a lack of parameters or model capacity.
+* The "Vanishing" Bottleneck: No matter how "wide" the layers are, if the training signal cannot propagate back through the deep stack of convolutions and activations during backpropagation, the weights in the early layers cannot be updated effectively. Therefore, width cannot compensate for a broken gradient flow caused by excessive depth in a "Plain CNN" architecture.
 
 """
 
