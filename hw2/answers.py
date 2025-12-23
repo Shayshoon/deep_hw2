@@ -317,26 +317,39 @@ part4_q2 = r"""
 part5_q1 = r"""
 **Your answer:**
 
+#### 1. 
+The accuracy generally increases as we move from $L=2$ to $L=4$ and $L=8$. The configurations with **$L=4$ or $L=8$** achieved the best results. Additionally, $K=64$ consistently outperformed $K=32$ at these depths.
+Usually, **$L=8$** is the best because This depth provides a high Representational Capacity. It allows the network to learn a rich hierarchy of features—moving from simple edges in early layers to complex object parts in deeper layers. As long as the network remains trainable, more layers allow for more non-linear transformations, which are necessary to classify complex datasets.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+
+
+#### 2.
+The configuration with **$L=16$** resulted in a total failure to learn. 
+it happens because "Vanishing Gradients". In a CNN (without skip connections), the gradient is calculated using the chain rule during backpropagation. As the gradient flows back through 16 layers, it is repeatedly multiplied by small values (weights and derivatives of the activation function). By the time it reaches the first layers, the gradient becomes effectively zero, meaning the early filters never update or learn, leaving the entire network stuck at random chance accuracy (~$10\%$).
+
+Proposed Solutions to fix the $L=16$ failure:
+1.  Residual Connections: Implementing a ResNet-style architecture. By adding the input of a block to its output ($x + f(x)$), we create a "gradient highway." This allows the gradient to flow directly to earlier layers without being diminished by every multiplication, making it possible to train much deeper networks.
+2.  Improved Weight Initialization: Using initialization specifically designed for ReLU activations. This ensures that the variance of the activations remains constant across layers, preventing the signal (and the gradient) from exploding or vanishing at the very start of training.
+
 
 """
 
 part5_q2 = r"""
 **Your answer:**
 
+#### 1.
+For all depths that were successfully trained ($L=2, 4, 8$), we see a consistent trend: increasing $K$ leads to higher accuracy and lower training loss.
+The configurations with $K=256$ achieved the highest test accuracy across the board because Increasing the number of filters ($K$) increases the Representational Capacity of each layer. More filters allow the network to detect a wider variety of features simultaneously at each level of abstraction. For example, instead of just detecting 32 different types of edges or textures, a $K=256$ layer can detect 256 distinct patterns, providing the subsequent layers with a much richer description of the input image.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+
+
+#### 2. Experiment 1.2 vs. Experiment 1.1 :
+Training Stability: Width ($K$) is "safer" In Exp 1.2, increasing $K$ never caused the model to stop learning. Even at $K=256$, the model converged well but Depth ($L$) is "risky" In Exp 1.1, increasing depth beyond a certain point ($L=16$) led to a total failure (vanishing gradients).
+Efficiency vs. Performance: While adding depth is theoretically more efficient at learning complex hierarchical features, it makes the optimization landscape much more difficult to navigate. 
+Adding width is a more straightforward way to boost performance, but it comes with a significant increase in the number of parameters and computational cost
+
+#### 3. Interaction between $L$ and $K$ :
+For $L=16$, increasing the width to $K=256$ did not solve the non-learning problem. This confirms that the failure in $L=16$ is an optimization/gradient flow issue rather than a lack of parameters or capacity. No matter how "wide" the layers are, if the signal cannot reach them during backpropagation, the network cannot learn.
 
 """
 
