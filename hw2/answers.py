@@ -318,8 +318,8 @@ part5_q1 = r"""
 **Your answer:**
 
 #### 1. 
-The accuracy generally increases as we move from $L=2$ to $L=4$ and $L=8$. The configurations with **$L=4$ or $L=8$** achieved the best results. Additionally, $K=64$ consistently outperformed $K=32$ at these depths.
-Usually, **$L=8$** is the best because This depth provides a high Representational Capacity. It allows the network to learn a rich hierarchy of features—moving from simple edges in early layers to complex object parts in deeper layers. As long as the network remains trainable, more layers allow for more non-linear transformations, which are necessary to classify complex datasets.
+The accuracy generally increases as we move from $L=2$ to $L=4$ and then decrease when we move to $L=8$ and $L=16$. The configurations with **$L=4$ or $L=2$** achieved the best results. Additionally, $K=64$ consistently outperformed $K=32$ at these depths.
+Usually, **$L=4$** is the best because This depth provides a high Representational Capacity. It allows the network to learn a rich hierarchy of features—moving from simple edges in early layers to complex object parts in deeper layers. As long as the network remains trainable, more layers allow for more non-linear transformations, which are necessary to classify complex datasets.
 
 
 
