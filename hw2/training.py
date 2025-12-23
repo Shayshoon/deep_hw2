@@ -69,7 +69,7 @@ class Trainer(abc.ABC):
         epochs_without_improvement = 0
 
         train_loss, train_acc, test_loss, test_acc = [], [], [], []
-        best_acc = None
+        best_acc = -1
 
         for epoch in range(num_epochs):
             verbose = False  # pass this to train/test_epoch.
@@ -86,7 +86,6 @@ class Trainer(abc.ABC):
             train_res = self.train_epoch(dl_train)
             test_result = self.test_epoch(dl_test)
             
-            best_acc = 0
             mean = lambda x: sum(x) / len(x)
             train_loss.append(mean(train_res.losses))
             train_acc.append(train_res.accuracy)
@@ -100,8 +99,9 @@ class Trainer(abc.ABC):
             #  - Optional: Implement checkpoints. You can use the save_checkpoint
             #    method on this class to save the model to the file specified by
             #    the checkpoints argument.
-            if best_acc is None or test_result.accuracy > best_acc:
+            if test_result.accuracy > best_acc:
                 # ====== YOUR CODE: ======
+                best_acc = test_result.accuracy
                 no_improvement = 0
                 if checkpoints is not None:
                     self.save_checkpoint(checkpoints)

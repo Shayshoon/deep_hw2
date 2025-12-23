@@ -160,8 +160,8 @@ def cnn_experiment(
     channels = [item for item in filters_per_layer for _ in range(layers_per_block)]
     activation_type = "relu"
     pooling_type = "max"
-    pooling_params = {'kernel_size': 2}
-    conv_params = {'kernel_size': 3}
+    pooling_params = {'kernel_size': 2, 'padding': 1}
+    conv_params = {'kernel_size': 3, 'padding':1}
 
     cnn = model_cls(in_size,
               out_classes,
@@ -185,7 +185,7 @@ def cnn_experiment(
         num_epochs=epochs,
         early_stopping=early_stopping,
         checkpoints=checkpoints,
-        print_every=100, 
+        print_every=10, 
         max_batches=batches,
         verbose=False
     )
