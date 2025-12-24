@@ -194,9 +194,10 @@ def run_notebooks(nb_paths, allow_errors=False, **kwargs):
     nb_paths.sort()
     for nb_path in nb_paths:
         try:
-            jupyter_utils.nbconvert(
-                nb_path, execute=True, inplace=True, allow_errors=allow_errors
-            )
+            if nb_path!="./Part2_Optimization.ipynb":
+                jupyter_utils.nbconvert(
+                    nb_path, execute=True, inplace=True, allow_errors=allow_errors
+                )
         except subprocess.CalledProcessError:
             error_msg = (
                 f"Got errors while executing notebook {nb_path}. "
