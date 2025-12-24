@@ -395,43 +395,91 @@ class ResNet(CNN):
         seq = nn.Sequential(*layers)
         return seq
 
+
 class YourCNN(nn.Module):
-    def __init__(self, in_size, out_classes, channels, pool_every, hidden_dims, dropout_rate=0.4, use_batchnorm=True):
+    def __init__(self, in_size, out_classes, channels, pool_every, hidden_dims, dropout_rate=0.35, use_batchnorm=True):
         super().__init__()
-        in_channels ,h ,w = in_size
-        conv_layers = []
-        curr_channels = in_channels
-
-        for i, out_channels in enumerate(channels):
-            conv_layers.append(nn.Conv2d(curr_channels, out_channels, kernel_size=3, padding=1))
-            if use_batchnorm:
-                conv_layers.append(nn.BatchNorm2d(out_channels))
-            conv_layers.append(nn.ReLU())
-            if(i+1) % pool_every == 0:
-                conv_layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
-                h //= 2
-                w //= 2
-            curr_channels = out_channels
-        self.features = nn.Sequential(*conv_layers)
-
-        flattened_size = curr_channels * h * w
-        fc_layers = []
-        curr_dim = flattened_size
-
-        for h_dim in hidden_dims:
-            fc_layers.append(nn.Linear(curr_dim, h_dim))
-            fc_layers.append(nn.Dropout(dropout_rate))
-            fc_layers.append(nn.ReLU())
-            curr_dim = h_dim
-
-        fc_layers.append(nn.Linear(curr_dim, out_classes))
-        self.classifier = nn.Sequential(*fc_layers)
-
+        in_channels, h, w = in_size
         
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
+        # ----------------------------------------------------------------------
+        # 1. Feature Extractor (Reusing ResidualBlock)
+        # ----------------------------------------------------------------------
+        layers = []
+        prev_channels = in_channels
+        
+        # We chunk the flat 'channels' list into blocks of size 'pool_every'
+        # e.g., if channels=[32,32,64,64] and pool_every=2:
+        # Block 1: [32, 32] -> ResidualBlock
+        # Block 2: [64, 64] -> ResidualBlock
+        
+        num_blocks = len(channels) // pool_every
+        
+        for i in range(num_blocks):
+            # 1. Slice the channels for this block
+            start = i * pool_every
+            end = (i + 1) * pool_every
+            block_channels = channels[start:end]
+            
+            # 2. Create a ResidualBlock (Handles Conv, BN, ReLU, Dropout, Skips automatically)
+            # We use kernel_size=3 for all layers in the block
+            block = ResidualBlock(
+                in_channels=prev_channels,
+                channels=block_channels,
+                kernel_sizes=[3] * len(block_channels),
+                batchnorm=use_batchnorm,
+                dropout=dropout_rate,
+                activation_type='lrelu',
+                activation_params={'negative_slope': 0.01}
+            )
+            layers.append(block)
+            
+            # 3. Add Pooling after the block
+            layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            
+            prev_channels = block_channels[-1]
 
-        return x
+        self.features = nn.Sequential(*layers)
+        
+        # ----------------------------------------------------------------------
+        # 2. Global Average Pooling (GAP)
+        # ----------------------------------------------------------------------
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        
+        # ----------------------------------------------------------------------
+        # 3. Classifier (Reusing MLP)
+        # ----------------------------------------------------------------------
+        # The MLP class from hw2.mlp already handles the Linear -> BN -> Dropout -> ReLU loop!
+        
+        # We need to construct the list of activations: [ReLU, ReLU, ..., None]
+        # MLP expects instantiated activation objects.
+        activations = [nn.LeakyReLU(negative_slope=0.01, inplace=True)] * len(hidden_dims) + [None]
+        
+        # Create the full dimension list: [In, Hidden1, Hidden2, ..., Out]
+        dims = [prev_channels] + hidden_dims + [out_classes]
+        
+        self.classifier = MLP(
+            in_dim=prev_channels,
+            dims=dims[1:],      # MLP takes output dims only (excluding input)
+            nonlins=activations
+        )
+
+        # ----------------------------------------------------------------------
+        # 4. Initialization
+        # ----------------------------------------------------------------------
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        features = self.features(x)
+        pooled = self.gap(features)
+        flat = torch.flatten(pooled, 1)
+        out = self.classifier(flat)
+        return out
         

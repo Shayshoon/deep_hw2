@@ -13,8 +13,8 @@ HIDDEN_DIMS="100"       # -H
 # --- Training Hyperparameters ---
 BATCH_SIZE_TRAIN="128"   # --bs-train
 BATCH_SIZE_TEST=""      # --bs-test (Empty = Auto)
-EPOCHS="75"             # --epochs
-EARLY_STOPPING="5"      # --early-stopping
+EPOCHS="100"             # --epochs
+EARLY_STOPPING="10"      # --early-stopping
 LEARNING_RATE="0.0005"  # --lr
 REGULARIZATION="0.002"  # --reg
 BATCHES_PER_EPOCH="100"  # --batches (Set to "" for full epoch)

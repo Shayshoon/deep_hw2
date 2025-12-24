@@ -121,7 +121,28 @@ case $EXP_ID in
             L=${L_OPTIONS[$((IDX - 3))]}
         fi
         ;;
+    5)  # === Experiment 2 ===
+        # Model: YourCNN (ycn)
+        # K=[32, 64, 128] fixed, L=3,6,9,12 varying
+        TOTAL_RUNS=4
+        MODEL_TYPE="yourcnn"  # Make sure this matches your python registration
 
+        if [ $IDX -ge $TOTAL_RUNS ]; then
+            echo "Experiment 2 is complete!"
+            exit 0
+        fi
+
+        K="32 64 128"
+        K_TAG="32-64-128"
+
+        L_OPTIONS=(3 6 9 12)
+        L=${L_OPTIONS[$IDX]}
+        
+        # === DYNAMIC P CALCULATION ===
+        # Since K has 3 stages, we split L evenly among them.
+        # L=3 -> P=1, L=6 -> P=2, etc.
+        POOL_EVERY=$(( L / 3 ))
+        ;;
     *)
         echo "Invalid Experiment ID: $EXP_ID"
         exit 1
@@ -159,6 +180,8 @@ MAIL_USER="shay-lavi@technion.ac.il"
 MAIL_TYPE=FAIL
 CONDA_HOME=$HOME/miniconda3
 CONDA_ENV=cs236781-hw2
+NEXT_IDX_VAL=$(( IDX + 1 ))
+
 
 sbatch \
     -N $NUM_NODES \
@@ -184,12 +207,11 @@ EXIT_CODE=\$?
 
 if [ \$EXIT_CODE -eq 0 ]; then
     echo "Experiment successful."
-    NEXT_IDX=\$(( IDX + 1 ))
     
     # Recursively call this script with current EXP_ID and NEXT_IDX
     # The top logic will handle switching EXP_ID if NEXT_IDX is too high.
-    echo "Chaining next job: Exp $EXP_ID, Index \$NEXT_IDX..."
-    /bin/bash \$SLURM_SUBMIT_DIR/$SCRIPT_NAME $EXP_ID $NEXT_IDX
+    echo "Chaining next job: Exp $EXP_ID, Index $NEXT_IDX_VAL..."
+    /bin/bash \$SLURM_SUBMIT_DIR/$SCRIPT_NAME $EXP_ID $NEXT_IDX_VAL
 else
     echo "Experiment failed with exit code \$EXIT_CODE!"
     exit \$EXIT_CODE

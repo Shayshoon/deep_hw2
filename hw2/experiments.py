@@ -11,7 +11,7 @@ from torchvision.datasets import CIFAR10
 
 from cs236781.train_results import FitResult
 
-from .cnn import CNN, ResNet
+from .cnn import CNN, ResNet, YourCNN
 from .mlp import MLP
 from .training import ClassifierTrainer
 from .classifier import ArgMaxClassifier, BinaryClassifier, select_roc_thresh
@@ -22,6 +22,7 @@ MODEL_TYPES = {
     ###
     "cnn": CNN,
     "resnet": ResNet,
+    "yourcnn": YourCNN
 }
 
 
@@ -94,6 +95,110 @@ def mlp_experiment(
     # ========================
     return model, thresh, valid_acc, test_acc
 
+def your_cnn_experiment(
+    run_name,
+    out_dir="./results",
+    seed=None,
+    device=None,
+    # Training params
+    bs_train=128,
+    bs_test=None,
+    batches=100,
+    epochs=100,
+    early_stopping=3,
+    checkpoints=None,
+    lr=1e-3,
+    reg=1e-3,
+    # Model params
+    filters_per_layer=[32],  # This represents 'K' (the list of widths)
+    layers_per_block=2,      # This represents 'L' (Total depth)
+    pool_every=2,
+    hidden_dims=[1024],
+    model_type="ycn",
+    **kw,
+):
+    """
+    Executes a single run of the 'YourCNN' experiment.
+    
+    Interprets 'layers_per_block' as the TOTAL depth (L).
+    Interprets 'filters_per_layer' as the list of channel widths (K).
+    """
+    if not seed:
+        seed = random.randint(0, 2 ** 31)
+    torch.manual_seed(seed)
+    if not bs_test:
+        bs_test = max([bs_train // 4, 1])
+    cfg = locals()
+
+    tf = torchvision.transforms.ToTensor()
+    ds_train = CIFAR10(root=DATA_DIR, download=True, train=True, transform=tf)
+    ds_test = CIFAR10(root=DATA_DIR, download=True, train=False, transform=tf)
+
+    if not device:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Import YourCNN dynamically (or ensure it's imported at the top)
+    from .cnn import YourCNN
+
+    # 1. Logic to create the 'channels' list based on L and K
+    #    L = Total Layers (e.g., 12)
+    #    K = List of widths (e.g., [32, 64, 128])
+    #    We split L evenly among the stages in K.
+    L = layers_per_block
+    K = filters_per_layer
+    
+    if L % len(K) != 0:
+        raise ValueError(
+            f"Total layers L={L} must be divisible by the number of K stages ({len(K)})."
+        )
+        
+    layers_per_stage = L // len(K)
+    channels = []
+    for k in K:
+        channels.extend([k] * layers_per_stage)
+
+    # 2. Instantiate YourCNN
+    #    Note: We hardcode dropout/batchnorm here as requested by 'YourCNN' logic,
+    #    or you could parse them from **kw if you added CLI args.
+    model = YourCNN(
+        in_size=(3, 32, 32),
+        out_classes=10,
+        channels=channels,
+        pool_every=pool_every,
+        hidden_dims=hidden_dims,
+        dropout_rate=0.2,       # Recommended default
+        use_batchnorm=True      # Recommended default
+    )
+    
+    # Wrap in ArgMaxClassifier for the Trainer
+    model = ArgMaxClassifier(model)
+    model = model.to(device)
+
+    # 3. Setup Training
+    loss_fn = torch.nn.CrossEntropyLoss()
+    # Using the same optimizer settings as standard CNN experiment
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=reg)
+    
+    trainer = ClassifierTrainer(model, loss_fn, optimizer, device=device)
+
+    # 4. Run Fit
+    fit_res = trainer.fit(
+        dl_train=DataLoader(ds_train, batch_size=bs_train, shuffle=True),
+        dl_test=DataLoader(ds_test, batch_size=bs_test, shuffle=False),
+        num_epochs=epochs,
+        early_stopping=early_stopping,
+        checkpoints=checkpoints,
+        print_every=10,
+        max_batches=batches,
+        verbose=False
+    )
+    
+    if 'device' in cfg:
+        cfg['device'] = str(cfg['device'])
+    
+    # 5. Save Results
+    save_experiment(run_name, out_dir, cfg, fit_res)
+
 
 def cnn_experiment(
     run_name,
@@ -152,6 +257,28 @@ def cnn_experiment(
     #   for you automatically.
     fit_res = None
     # ====== YOUR CODE: ======
+
+    if model_type == "yourcnn":
+        return your_cnn_experiment(run_name,
+						   out_dir,
+						   seed,
+						   device,
+						   bs_train,
+						   bs_test,
+						   batches,
+						   epochs,
+						   early_stopping,
+						   checkpoints,
+						   lr,
+						   reg,
+						   filters_per_layer,
+						   layers_per_block,
+						   pool_every,
+						   hidden_dims,
+						   model_type,
+						   **kw)
+
+    
     dl_train = DataLoader(ds_train, batch_size=bs_train, shuffle=True)
     dl_test = DataLoader(ds_test, batch_size=bs_test, shuffle=True)
 
