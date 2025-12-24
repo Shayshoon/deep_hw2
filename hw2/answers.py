@@ -317,28 +317,26 @@ part4_q2 = r"""
 part5_q1 = r"""
 **Your answer:**
 
-#### 1. 
-The accuracy generally increases as we move from $L=2$ to $L=4$ and then decrease when we move to $L=8$ and $L=16$. The configurations with **$L=4$ or $L=2$** achieved the best results. Additionally, $K=64$ consistently outperformed $K=32$ at these depths.
-Usually, **$L=4$** is the best because This depth provides a high Representational Capacity. It allows the network to learn a rich hierarchy of features—moving from simple edges in early layers to complex object parts in deeper layers. As long as the network remains trainable, more layers allow for more non-linear transformations, which are necessary to classify complex datasets.
+#### 1.
 
-
+The accuracy seems to decrease as model depth increases. this could be explained by vanishing gradients. The model trained with $L=4$ seems to converge slower than the model trained with $L=2$. The models with $L=8$ and $L=16$ were completely untrainable due to vanishing gradients.
+$K=64$ consistently outperformed $K=32$ in terms of convergance velocity (fewer epochs to reach best accuracy).
 
 #### 2.
-The configuration with **$L=16$** resulted in a total failure to learn. 
-it happens because "Vanishing Gradients". In a CNN (without skip connections), the gradient is calculated using the chain rule during backpropagation. As the gradient flows back through 16 layers, it is repeatedly multiplied by small values (weights and derivatives of the activation function). By the time it reaches the first layers, the gradient becomes effectively zero, meaning the early filters never update or learn, leaving the entire network stuck at random chance accuracy (~$10\%$).
 
-Proposed Solutions to fix the $L=16$ failure:
-1.  Residual Connections: Implementing a ResNet-style architecture. By adding the input of a block to its output ($x + f(x)$), we create a "gradient highway." This allows the gradient to flow directly to earlier layers without being diminished by every multiplication, making it possible to train much deeper networks.
-2.  Improved Weight Initialization: Using initialization specifically designed for ReLU activations. This ensures that the variance of the activations remains constant across layers, preventing the signal (and the gradient) from exploding or vanishing at the very start of training.
+The configurations with $L=16$ and $L=8$ resulted in a total failure to learn. 
+it happens because of "Vanishing Gradients". In a CNN (without skip connections), the gradient is calculated using the chain rule during backpropagation. As the gradient flows back through 16 layers, it is repeatedly multiplied by small values (weights and derivatives of the activation function). By the time it reaches the first layers, the gradient becomes effectively zero, meaning the early filters never update or learn, leaving the entire network stuck at random chance accuracy (~$10\%$).
+The deeper models also might be untrainable due to excessive pooling. in each pooling layer we decrease the dimensions of our feature maps and the network might lose a lot of important about the sample.
+
+Proposed Solutions to fix the untrainable models:
+1.  Residual Connections: Implementing a ResNet-style architecture. By adding the input of a block to its output ($x + f(x)$). This allows the gradient to flow directly to earlier layers without being diminished by every multiplication, making it possible to train much deeper networks.
+2. Remove some pooling layers. for a 32x32 image, (in the $L=16$ model) we pool every 4 layers with a pooling kernel of size 2x2. this makes the feature map shrink down to size 4x4 ($32 / 2^(L/4) = 4$) which might be too small to contain any useful information.
 
 
 """
 
 part5_q2 = r"""
 **Your answer:**
-
-Analyze your results from experiment 1.2. In particular, compare to the results of experiment 1.1
-.
 
 
 #### 1.
